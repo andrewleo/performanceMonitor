@@ -26,9 +26,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.netease.emmagee.performance.CurrentInfo;
+
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
+import android.app.ActivityManager.RunningTaskInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -59,6 +62,7 @@ public class PerformanceMonitor {
 	private CpuInfo cpuInfo;
 	private MemoryInfo memoryInfo;
 	private TrafficInfo networkInfo;
+	private CurrentInfo currentInfo;
 	private SimpleDateFormat formatterTime;
 	private DecimalFormat fomart;
 	private boolean isInitialStatic = true;
@@ -95,6 +99,7 @@ public class PerformanceMonitor {
 		cpuInfo = new CpuInfo();
 		memoryInfo = new MemoryInfo();
 		networkInfo = new TrafficInfo();
+		currentInfo = new CurrentInfo();
 	}
 
 	/**
@@ -160,8 +165,7 @@ public class PerformanceMonitor {
 				osw = new OutputStreamWriter(out, "GBK");
 				bw = new BufferedWriter(osw);
 				// 生成头文件
-				bw.write("测试用例信息" + "," + "时间" + "," + "应用占用内存PSS(MB)" + "," + "应用占用内存比(%)" + "," + " 机器剩余内存(MB)" + "," + "应用占用CPU率(%)" + ","
-						+ "CPU总使用率(%)" + "," + "流量(KB)" + "," + "当前电量" + "," + "电池温度(C)" + "," + "电压(V)" + "," + "当前Activity数量" + "," + "当前Activity详情" + "\r\n");
+				bw.write("测试用例信息,时间,栈顶Activity名称,应用占用内存PSS(MB),应用占用内存比(%),机器剩余内存(MB),应用占用CPU率(%),CPU总使用率(%),流量(KB),电量(%),电流(mA),温度(C),电压(V),当前Activity数量,当前Activity详情\r\n");
 				bw.flush();
 			} else {
 				out = new FileOutputStream(resultFile, true); // 在文件内容后继续加内容
@@ -225,14 +229,14 @@ public class PerformanceMonitor {
 				if (activityNames.length() > 0) {
 					activityNames = activityNames.substring(0, activityNames.length() - 1);
 				}
-				
+				String current = String.valueOf(currentInfo.getCurrentValue());
 				if (intervalTraff == -1) {
-					bw.write(this.getTestCaseInfo() + "-" + this.getActionInfo() + "," + mDateTime + "," + pss + "," + percent + "," + freeMem + ","
-							+ processCpuRatio + "," + totalCpuRatio + "," + "本程序或本设备不支持流量统计" + "," + currentBatt + "," + temperature + "," + voltage
+					bw.write(this.getTestCaseInfo() + "-" + this.getActionInfo() + "," + mDateTime + ","+this.getTopActivity()+"," + pss + "," + percent + "," + freeMem + ","
+							+ processCpuRatio + "," + totalCpuRatio + "," + "本程序或本设备不支持流量统计" + "," + currentBatt + "," + current + "," + temperature + "," + voltage
 							+ "," + size + "," + activityNames + "\r\n");
 				} else {
-					bw.write(this.getTestCaseInfo() + "-" + this.getActionInfo() + "," + mDateTime + "," + pss + "," + percent + "," + freeMem + ","
-							+ processCpuRatio + "," + totalCpuRatio + "," + intervalTraff + "," + currentBatt + "," + temperature + "," + voltage
+					bw.write(this.getTestCaseInfo() + "-" + this.getActionInfo() + "," + mDateTime + ","+this.getTopActivity()+"," + pss + "," + percent + "," + freeMem + ","
+							+ processCpuRatio + "," + totalCpuRatio + "," + intervalTraff + "," + currentBatt + "," + current + "," + temperature + "," + voltage
 							+ "," + size + "," + activityNames + "\r\n");
 				}
 				bw.flush();
@@ -394,5 +398,21 @@ public class PerformanceMonitor {
 			actionInfo = testName;
 		}
 		return actionInfo;
+	}
+	
+	/**
+	 * get top activity name
+	 * 
+	 * @param context
+	 *            context of activity
+	 * @return top activity name
+	 */
+	private String getTopActivity() {
+		ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+		List<RunningTaskInfo> runningTaskInfos = manager.getRunningTasks(1);
+		if (runningTaskInfos != null)
+			return (runningTaskInfos.get(0).topActivity).toString();
+		else
+			return null;
 	}
 }
