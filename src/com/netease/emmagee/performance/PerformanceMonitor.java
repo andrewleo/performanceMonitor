@@ -40,6 +40,8 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 /**
  * Service running in background
@@ -83,6 +85,8 @@ public class PerformanceMonitor {
 		fomart = new DecimalFormat();
 		fomart.setMaximumFractionDigits(2);
 		fomart.setMinimumFractionDigits(2);
+		fomart.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
+		fomart.setGroupingUsed(false);
 		// 注册广播监听电量
 		receiver = new BatteryInfoBroadcastReceiver();
 		IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
